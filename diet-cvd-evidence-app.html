@@ -201,4 +201,63 @@ document.getElementById("langSelect").addEventListener("change",apply);
 const observer=new MutationObserver(()=>{if(!hindi)return;observer.disconnect();translateNode(document.body);observer.observe(document.body,{childList:true,subtree:true})});
 observer.observe(document.body,{childList:true,subtree:true});
 })();
+
+(function(){
+const $=id=>document.getElementById(id);
+const language=()=> $("langSelect")?.value==="hi";
+const t=(en,hi)=>language()?hi:en;
+const is=id=>$(id).checked;
+const food={
+north:{grain:["2 small phulkas","1 small phulka","1 small phulka"],veg:["lauki or bhindi sabzi","seasonal cooked vegetables","mixed vegetable sabzi"],breakfast:"vegetable besan chilla"},
+south:{grain:["2 small idlis","small measured rice portion","1 small dosa"],veg:["vegetable sambar","vegetable poriyal","cooked vegetable curry"],breakfast:"idli and sambar"},
+east:{grain:["small vegetable poha portion","small measured rice portion","small measured rice portion"],veg:["cooked seasonal vegetables","lightly cooked greens","mixed vegetables"],breakfast:"vegetable poha"},
+west:{grain:["small low-oil dhokla portion","2 small phulkas","1 small jowar roti"],veg:["vegetable sabzi","seasonal sabzi","mixed vegetables"],breakfast:"low-oil dhokla"}
+};
+const hiFoods={
+"2 small phulkas":"2 छोटी फुल्के","1 small phulka":"1 छोटा फुल्का","1 small dosa":"1 छोटा डोसा","2 small idlis":"2 छोटी इडली","small measured rice portion":"नपी हुई थोड़ी मात्रा में चावल","small vegetable poha portion":"थोड़ा सब्जी पोहा","small low-oil dhokla portion":"थोड़ा कम तेल वाला ढोकला","1 small jowar roti":"1 छोटी ज्वार रोटी","lauki or bhindi sabzi":"लौकी या भिंडी की सब्जी","seasonal cooked vegetables":"पकी हुई मौसमी सब्जियाँ","mixed vegetable sabzi":"मिक्स सब्जी","vegetable sambar":"सब्जियों वाला सांभर","vegetable poriyal":"सब्जी पोरियल","cooked vegetable curry":"पकी सब्जी की करी","cooked seasonal vegetables":"पकी मौसमी सब्जियाँ","lightly cooked greens":"हल्की पकी हरी सब्जियाँ","mixed vegetables":"मिक्स सब्जियाँ","vegetable sabzi":"सब्जी","seasonal sabzi":"मौसमी सब्जी","vegetable besan chilla":"सब्जियों वाला बेसन चीला","idli and sambar":"इडली और सांभर","vegetable poha":"सब्जी पोहा","low-oil dhokla":"कम तेल वाला ढोकला"};
+function f(x){return language()?(hiFoods[x]||x):x}
+function cell(x){return esc(x)}
+function conditions(){return ["htn","dm","cad","hf","ckd"].filter(is)}
+function build(){
+const w=Number($("pw").value),h=Number($("ph").value),age=Number($("pa").value);
+const output=$("planOutput");
+if(!Number.isFinite(w)||!Number.isFinite(h)||!Number.isFinite(age)||w<25||w>300||h<120||h>230||age<18||age>100){output.textContent=t("Enter valid adult height, weight and age.","वयस्क की सही लंबाई, वजन और आयु दर्ज करें।");return}
+const bmi=w/(h/100)**2,region=$("region").value,pref=$("pref").value,pattern=food[region],cs=conditions();
+const renal=cs.includes("ckd"),diabetes=cs.includes("dm"),hf=cs.includes("hf"),htn=cs.includes("htn"),cad=cs.includes("cad");
+const protein=renal?t("Protein choice and quantity require eGFR, dialysis status, serum potassium and dietitian review.","प्रोटीन का प्रकार और मात्रा eGFR, डायलिसिस और पोटैशियम जाँच के अनुसार आहार विशेषज्ञ तय करें।"):
+pref==="vegan"?t("Tofu or soy / legumes; check vitamin B12.","टोफू, सोया या दालें; विटामिन B12 की जाँच करें।"):
+pref==="nonveg"?t("Choose fish or skinless chicken instead of processed meat.","प्रसंस्कृत मांस के बजाय मछली या बिना चमड़ी का चिकन लें।"):
+pref==="egg"?t("Egg or dal, with unsweetened curd if tolerated.","अंडा या दाल और उपयुक्त हो तो बिना चीनी का दही लें।"):
+t("Dal, pulses, unsweetened curd or modest portions of paneer.","दाल, बिना चीनी का दही या सीमित पनीर लें।");
+const protMeal=renal?t("Protein portion only after renal diet review","गुर्दे की जाँच के बाद ही प्रोटीन की मात्रा"):
+pref==="nonveg"?t("Dal or fish/skinless chicken","दाल या मछली/बिना चमड़ी का चिकन"):
+pref==="egg"?t("Dal or boiled egg","दाल या उबला अंडा"):
+pref==="vegan"?t("Dal, tofu or soy","दाल, टोफू या सोया"):
+t("Dal or plain curd","दाल या सादा दही");
+const fruit=renal?t("Fruit only after potassium review","पोटैशियम जाँच के बाद फल"):
+diabetes?t("One small whole fruit, no juice","एक छोटा पूरा फल, रस नहीं"):
+t("One seasonal whole fruit","एक मौसमी पूरा फल");
+const snack=renal?t("Renal-dietitian-approved snack; avoid automatic nuts/chana","गुर्दा आहार विशेषज्ञ द्वारा स्वीकृत नाश्ता; मेवे/चना स्वतः नहीं"):
+t("Small unsalted nut portion or roasted chana","थोड़े बिना नमक के मेवे या भुने चने");
+const meals=[
+[t("Breakfast","नाश्ता"),f(pattern.breakfast)+(diabetes?t("; measured portion","; नपी हुई मात्रा"):"")],
+[t("Mid-morning","सुबह का हल्का भोजन"),fruit],
+[t("Lunch","दोपहर"),f(pattern.grain[1])+", "+f(pattern.veg[1])+", "+protMeal],
+[t("Evening snack","शाम का नाश्ता"),snack],
+[t("Dinner","रात"),f(pattern.grain[2])+", "+f(pattern.veg[2])+", "+protMeal]
+];
+const rules=[];
+if(htn)rules.push(t("Hypertension: DASH-style vegetables, whole grains and low-sodium home cooking; limit pickles, papad, namkeen and packaged foods.","उच्च रक्तचाप: DASH शैली, साबुत अनाज और कम नमक का घर का भोजन; अचार, पापड़, नमकीन और पैकेटबंद भोजन कम करें।"));
+if(diabetes)rules.push(t("Diabetes: use a consistent carbohydrate portion, avoid sweetened drinks and juice; monitor glucose especially with insulin/sulfonylureas.","मधुमेह: कार्बोहाइड्रेट की मात्रा नियमित रखें, मीठे पेय और रस से बचें; विशेषकर इंसुलिन/सल्फोनिलयूरिया पर ग्लूकोज़ जाँचें।"));
+if(cad)rules.push(t("CAD/dyslipidaemia: favour fibre, unsaturated oils and legumes; limit trans fat, saturated fat and processed meat.","CAD/लिपिड विकार: फाइबर, असंतृप्त तेल और दालें लें; ट्रांस फैट, संतृप्त वसा और प्रसंस्कृत मांस कम करें।"));
+if(hf)rules.push(t("Heart failure: individualise sodium and fluid limits to congestion, sodium level and treatment; do not prescribe routine fluid restriction to everyone.","हृदय विफलता: सूजन, सोडियम स्तर और उपचार के अनुसार नमक/तरल सीमा तय करें; सभी को एक जैसी तरल पाबंदी न दें।"));
+if(renal)rules.push(t("CKD safety override: this is a provisional meal framework, not a renal prescription. Confirm eGFR, potassium, phosphate, dialysis and protein needs. Avoid potassium-based salt substitutes unless approved.","CKD सुरक्षा: यह प्रारंभिक भोजन ढाँचा है, गुर्दा रोग का पर्चा नहीं। eGFR, पोटैशियम, फॉस्फेट, डायलिसिस और प्रोटीन जरूरत जाँचें। चिकित्सकीय अनुमति के बिना पोटैशियम वाला नमक विकल्प न लें।"));
+if(!rules.length)rules.push(t("General prevention: diverse vegetables, whole grains, legumes and minimally processed foods; adjust portions to energy needs.","सामान्य बचाव: विविध सब्जियाँ, साबुत अनाज, दालें और कम प्रसंस्कृत भोजन; मात्रा ऊर्जा जरूरत के अनुसार रखें।"));
+const restrictions=renal?t("Renal diet review required before using the sample menu.","नमूना भोजन अपनाने से पहले गुर्दा आहार विशेषज्ञ की समीक्षा आवश्यक है।"):t("Portions are examples, not a calorie or macronutrient prescription.","यह केवल मात्रा के उदाहरण हैं, कैलोरी या पोषक तत्वों का पर्चा नहीं।");
+output.innerHTML='<div class="card"><h3>'+t("Condition- and preference-specific diet plan","बीमारी और भोजन की पसंद के अनुसार आहार योजना")+'</h3><p><b>BMI:</b> '+bmi.toFixed(1)+' kg/m² · '+t("Preference","भोजन की पसंद")+': '+cell($("pref").selectedOptions[0].textContent)+' · '+t("Region","क्षेत्र")+': '+cell($("region").selectedOptions[0].textContent)+'</p><p><b>'+t("Protein strategy","प्रोटीन की योजना")+':</b> '+cell(protein)+'</p><table><thead><tr><th>'+t("Meal","भोजन")+'</th><th>'+t("Recommended food","सुझाया गया भोजन")+'</th></tr></thead><tbody>'+meals.map(m=>'<tr><td>'+cell(m[0])+'</td><td>'+cell(m[1])+'</td></tr>').join("")+'</tbody></table><h3>'+t("Condition-specific modifications","बीमारी के अनुसार बदलाव")+'</h3><ul>'+rules.map(x=>'<li>'+cell(x)+'</li>').join("")+'</ul><p class="safety">'+cell(restrictions)+'</p><p class="sm">'+t("Adult educational guidance only. Check allergies, pregnancy, medicines, laboratory values, calorie needs and cultural preferences with a clinician or registered dietitian.","यह केवल वयस्कों के लिए शैक्षिक सलाह है। एलर्जी, गर्भावस्था, दवाएँ, जाँच, कैलोरी जरूरत और व्यक्तिगत पसंद की समीक्षा चिकित्सक या आहार विशेषज्ञ से करें।")+'</p><button class="plan-btn" id="printPlan">'+t("Print / save PDF","प्रिंट करें / PDF सहेजें")+'</button></div>';
+$("printPlan").onclick=()=>window.print();
+}
+$("generatePlan").onclick=build;
+$("langSelect").addEventListener("change",()=>{if($("planOutput").innerHTML)build()});
+})();
 </script></body></html>
